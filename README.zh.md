@@ -48,11 +48,14 @@
 
 ## 快速开始
 
+`dsh` 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的 CLI（`@deepseek-ai/dsh`）。先装 Harness，本插件不带这个命令。
+
 ```sh
+npm install -g @deepseek-ai/dsh
 dsh plugin --profile web add github:syncable-dev/dsh-plugin-memtrace
 
-# 或 npm
-dsh plugin --profile web add dsh-plugin-memtrace
+# 不装全局 CLI 也可以：
+npx -y @deepseek-ai/dsh plugin --profile web add github:syncable-dev/dsh-plugin-memtrace
 
 dsh --profile web --dump-config | grep -A4 'id: dsh-plugin-memtrace'
 ```

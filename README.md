@@ -49,12 +49,17 @@ It should call Memtrace — not `grep`.
 
 ## Quick start
 
+`dsh` is the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) CLI (`@deepseek-ai/dsh`). Install that first — this plugin does not ship it.
+
 ```sh
-# 1. Install the bundle into your web profile
+# once
+npm install -g @deepseek-ai/dsh
+
+# then add Memtrace
 dsh plugin --profile web add github:syncable-dev/dsh-plugin-memtrace
 
-# or from npm
-dsh plugin --profile web add dsh-plugin-memtrace
+# no global install? same command via npx:
+npx -y @deepseek-ai/dsh plugin --profile web add github:syncable-dev/dsh-plugin-memtrace
 
 # 2. Restart the profile and confirm the layer
 dsh --profile web --dump-config | grep -A4 'id: dsh-plugin-memtrace'
