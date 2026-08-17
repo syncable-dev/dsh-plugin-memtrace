@@ -1,0 +1,7 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Memtrace">
+  <rect width="128" height="128" rx="28" fill="#0A1628"/>
+  <circle cx="64" cy="64" r="50" fill="none" stroke="#00D4B8" stroke-width="1.5" opacity="0.28" stroke-dasharray="2 6"/>
+  <path d="M 64 28 C 94 28, 108 52, 94 70 C 80 88, 50 86, 46 64 C 42 42, 64 36, 78 50 C 92 64, 76 78, 66 68"
+        fill="none" stroke="#00D4B8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="66" cy="68" r="6" fill="#F6FBFF"/>
+</svg>
