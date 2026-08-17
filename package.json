@@ -1,0 +1,65 @@
+{
+  "name": "dsh-plugin-memtrace",
+  "version": "0.1.0",
+  "description": "Local-first code intelligence graph for DeepSeek Harness: structural search, blast radius, temporal memory, and 27 agent skills over Memtrace MCP.",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "dsh-plugin-memtrace-mcp": "./bin/memtrace-mcp.js"
+  },
+  "files": [
+    "index.js",
+    "lib/",
+    "bin/",
+    "skills/",
+    "references/",
+    "assets/",
+    "cordis.patch.yml",
+    "LICENSE",
+    "README.md",
+    "README.zh.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "sync-skills": "node scripts/sync-skills.js"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "memtrace",
+    "mcp",
+    "code-intelligence",
+    "knowledge-graph",
+    "agent-skill"
+  ],
+  "license": "MIT",
+  "homepage": "https://memtrace.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/syncable-dev/dsh-plugin-memtrace.git"
+  },
+  "bugs": {
+    "url": "https://github.com/syncable-dev/dsh-plugin-memtrace/issues"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh": ">=0.1.0-rc.1 <0.2.0-0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh": {
+      "optional": true
+    }
+  },
+  "dsh": {
+    "displayName": "Memtrace",
+    "description": "Code intelligence graph — find symbols, blast radius, evolution, and architecture before the agent greps.",
+    "icon": "./assets/icon.svg",
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

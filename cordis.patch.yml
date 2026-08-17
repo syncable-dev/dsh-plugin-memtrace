@@ -1,0 +1,26 @@
+# Memtrace bundle layer for DeepSeek Harness.
+#
+# Two rows, both owned by this package:
+# - dsh-plugin-memtrace registers the Memtrace agent skills at apply time.
+# - mcp-memtrace is the official DSH MCP client pointed at `memtrace mcp`.
+#   MEMTRACE_BIN overrides the binary; otherwise we use the launcher on PATH
+#   (ships as dsh-plugin-memtrace-mcp) which prefers a local `memtrace` and
+#   falls back to `npx -y memtrace mcp`.
+- insert:
+    - id: dsh-plugin-memtrace
+      name: dsh-plugin-memtrace
+    - id: mcp-memtrace
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: memtrace
+        transport: stdio
+        command: !!js (process.env.MEMTRACE_BIN && process.env.MEMTRACE_BIN.trim()) || 'npx'
+        args: !!js (process.env.MEMTRACE_BIN && process.env.MEMTRACE_BIN.trim()) ? ['mcp'] : ['-y', 'memtrace', 'mcp']
+        cwd: !!js process.cwd()
+        failOnStartupError: false
+        toolCallTimeoutMs: 180000
+        reconnect:
+          enabled: true
+          initialDelayMs: 500
+          maxDelayMs: 30000
+          maxAttempts: 10
