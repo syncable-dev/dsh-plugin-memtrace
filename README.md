@@ -5,19 +5,19 @@
 <h1 align="center">Memtrace for DeepSeek Harness</h1>
 
 <p align="center">
-  <strong>The code intelligence graph, as a DSH plugin.</strong><br />
+  <strong>The code intelligence graph, as a DeepSeek Harness plugin.</strong><br />
   Structural search · blast radius · temporal memory · 27 agent skills
 </p>
 
 <p align="center">
-  <a href="https://github.com/topics/dsh-plugin"><img src="https://img.shields.io/badge/Topic-dsh--plugin-8257D0?style=for-the-badge" alt="dsh-plugin" /></a>
-  <a href="https://github.com/topics/dsh"><img src="https://img.shields.io/badge/Topic-dsh-4D6BFE?style=for-the-badge" alt="dsh" /></a>
+  <a href="https://github.com/deepseek-ai/deepseek-harness"><img src="https://img.shields.io/badge/DeepSeek-Harness-4D6BFE?style=for-the-badge" alt="DeepSeek Harness" /></a>
+  <a href="https://github.com/topics/dsh-plugin"><img src="https://img.shields.io/badge/topic-dsh--plugin-8257D0?style=for-the-badge" alt="dsh-plugin topic" /></a>
   <a href="https://memtrace.io"><img src="https://img.shields.io/badge/memtrace.io-00D4B8?style=for-the-badge&labelColor=0A1628" alt="memtrace.io" /></a>
 </p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT" /></a>
-  <a href="https://github.com/topics/dsh-plugin"><img src="https://img.shields.io/badge/dsh-plugin-success" alt="DSH plugin" /></a>
+  <a href="https://github.com/deepseek-ai/deepseek-harness"><img src="https://img.shields.io/badge/DeepSeek%20Harness-plugin-success" alt="DeepSeek Harness plugin" /></a>
   <a href="https://www.npmjs.com/package/dsh-plugin-memtrace"><img src="https://img.shields.io/npm/v/dsh-plugin-memtrace" alt="npm" /></a>
   <img src="https://img.shields.io/badge/node-%5E22.19%20%7C%7C%20%3E%3D24-brightgreen.svg" alt="Node" />
   <a href="https://github.com/syncable-dev/dsh-plugin-memtrace/actions"><img src="https://img.shields.io/github/actions/workflow/status/syncable-dev/dsh-plugin-memtrace/verify.yml?branch=main&label=CI" alt="CI" /></a>
