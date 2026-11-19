@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-memtrace",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Local-first code intelligence graph for DeepSeek Harness: structural search, blast radius, temporal memory, and 27 agent skills over Memtrace MCP.",
   "icon": "./assets/icon.svg",
   "type": "module",

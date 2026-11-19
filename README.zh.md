@@ -60,7 +60,7 @@ npx -y @deepseek-ai/dsh plugin --profile web add github:syncable-dev/dsh-plugin-
 dsh --profile web --dump-config | grep -A4 'id: dsh-plugin-memtrace'
 ```
 
-首次启动可能会花一分钟（`npx -y memtrace mcp` 拉取二进制）；插件同时会确保 `dsh` Named Workspace 存在（`memtrace workspace create dsh`）。想跳过 npx 拉取：在 profile 的 `cordis.patch.yml` 里整行重述 `mcp-memtrace`，改为 `command: memtrace`（DSH 不做深度合并）。
+row 固定 `command: memtrace`（用 `MEMTRACE_BIN` 覆盖；零安装可整行重述为 `command: npx`、`args: ['-y', 'memtrace', 'mcp']`）。一个 child 服务整个 profile —— 想让某个项目有自己的图谱，在 profile 的 `cordis.patch.yml` 里整行重述 `mcp-memtrace` 并设 `cwd: <仓库根目录>`（DSH 不做深度合并，需重述整行）。
 
 然后在 Web UI 里：
 
@@ -87,11 +87,11 @@ dsh --profile web --dump-config | grep -A4 'id: dsh-plugin-memtrace'
 两条 Cordis 行，都由本包拥有：
 
 1. **`dsh-plugin-memtrace`** — 读取 `skills/*/SKILL.md`，在 `apply` 时注册；卸载即注销。
-2. **`mcp-memtrace`** — 官方 MCP 客户端，`serverName: memtrace`，`npx -y memtrace mcp --workspace dsh`（整行字面量：0.2.x 的 patch 组合器会破坏返回数组的 `!!js` 表达式）。子进程锚定在 **`dsh` Named Workspace** 上：没有 `memtrace start` 时，MCP 进程自己取得 workspace-owner 租约并启动本地 MemDB sidecar，数据落在 `~/.memtrace/workspaces/data/<id>/`。要固定本地二进制，请整行重述本 row —— 例如改用随包发布的 `dsh-plugin-memtrace-mcp` 启动器（优先 `MEMTRACE_BIN`，其次 PATH 上的 `memtrace`，最后 npx）。
+2. **`mcp-memtrace`** — 官方 MCP 客户端，`serverName: memtrace`，`memtrace mcp`，命令固定（`MEMTRACE_BIN`，否则 PATH 上的 `memtrace` —— 不会按 child 重复拉取 npx）。不带 workspace 旗标：`memtrace mcp` 以其工作目录为锚，打开仓库自己的 `.memdb` —— 等 host 按会话 workspace 启动 child 后即为按项目；当前则靠整行重述本 row。
 
 不会去改文件系统 skill provider 的 `config`（整行覆盖、后写赢）。运行时注册不会和其他 skill 包打架。
 
-MCP 子进程是全局唯一实例，store 无法跟随每个会话的 workspace。所有 DSH 会话共享 **`dsh` Named Workspace** 这一张图；用 `memtrace workspace add dsh <repo>` 把仓库加为成员。Memtrace 拒绝把已有自己 `.memdb` 的仓库索引进另一个 store（防脑裂）。要改用某个仓库自己的 store：在 profile 的 `cordis.patch.yml` 里整行重述 `mcp-memtrace`，设 `cwd: <repo>` 并去掉 `--workspace` 参数。
+MCP stdio 不携带每次调用的会话身份：一个 child 收到所有会话的调用，仓库身份必须随进程传递 —— 不带旗标的 `memtrace mcp` 打开由其工作目录锚定的 `.memdb`（`memtrace mcp --help` 的 project-editor 模式）。dsh-mcp-client（0.2.2-rc.5）按 row 挂一个静态 `cwd` 的 child，按会话 keying 需要 host 侧改动；在此之前，整行重述 `mcp-memtrace` 并设 `cwd: <仓库根目录>` 即可让该项目拥有自己的 child、自己的 store，也不会触发防脑裂拒绝。
 
 ## 许可证
 

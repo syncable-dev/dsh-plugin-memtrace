@@ -65,7 +65,7 @@ npx -y @deepseek-ai/dsh plugin --profile web add github:syncable-dev/dsh-plugin-
 dsh --profile web --dump-config | grep -A4 'id: dsh-plugin-memtrace'
 ```
 
-First launch may take a minute while `npx -y memtrace mcp` fetches the Memtrace binary; the plugin also ensures the `dsh` Named Workspace exists (`memtrace workspace create dsh`). To skip the npx fetch, restate the `mcp-memtrace` row in the profile's `cordis.patch.yml` with `command: memtrace` — restate the whole row, DSH does not deep-merge.
+The row pins `command: memtrace` (override with `MEMTRACE_BIN`; for a zero-install fetch restate the row with `command: npx` and `args: ['-y', 'memtrace', 'mcp']`). One child serves the whole profile — give a project its own graph by restating the `mcp-memtrace` row in the profile's `cordis.patch.yml` with `cwd: <repo root>` (restate the whole row, DSH does not deep-merge).
 
 Then open the Web UI and index the workspace:
 
@@ -96,7 +96,7 @@ flowchart LR
 Two Cordis rows, both owned by this bundle:
 
 1. **`dsh-plugin-memtrace`** — reads `skills/*/SKILL.md` and registers each skill at apply time. Unload disposes them.
-2. **`mcp-memtrace`** — official MCP client, `serverName: memtrace`, stdio, `npx -y memtrace mcp --workspace dsh` (every value literal on purpose: the 0.2.x patch composer mangles evaluated `!!js` values that return arrays). The child anchors on the **`dsh` Named Workspace**: with no `memtrace start` running, the MCP process itself takes the workspace-owner lease and starts the local MemDB sidecar, storing under `~/.memtrace/workspaces/data/<id>/`. To pin a binary, restate the row — for example with the shipped `dsh-plugin-memtrace-mcp` launcher, which prefers `MEMTRACE_BIN`, then a local `memtrace`, then npx.
+2. **`mcp-memtrace`** — official MCP client, `serverName: memtrace`, stdio, `memtrace mcp` with the command pinned (`MEMTRACE_BIN`, else `memtrace` on PATH — no per-child npx fetch). No workspace flag: `memtrace mcp` anchors on its working directory and opens the repository's own `.memdb` — per project once the host keys MCP children per session workspace; per restated row today.
 
 We do **not** patch the filesystem skill provider's config. That row is last-write-wins; runtime registration does not collide with other skill packs.
 
@@ -136,11 +136,11 @@ All 27 bundles live under [`skills/`](skills/).
 
 | Variable | Effect |
 | --- | --- |
-| `MEMTRACE_BIN` | Absolute path or command the shipped `dsh-plugin-memtrace-mcp` launcher uses instead of `npx -y memtrace mcp`; wire it by restating the `mcp-memtrace` row with that launcher |
+| `MEMTRACE_BIN` | Absolute path or command the MCP row launches instead of the `memtrace` on PATH (also the shipped launcher's preference) |
 
 Override the MCP row in the profile's `cordis.patch.yml` if you already run a Streamable HTTP Memtrace endpoint — restate the whole `mcp-memtrace` config (DSH does not deep-merge).
 
-Every DSH session shares the **`dsh` Named Workspace** graph; add repositories as members with `memtrace workspace add dsh <repo>`. Memtrace refuses to index a repository whose own `.memdb` differs from the active store (split-brain guard). To serve such a repository's existing store instead, restate the `mcp-memtrace` row in the profile's `cordis.patch.yml` with `cwd: <repo>` and no `--workspace` flags. The MCP child is one global instance — its store cannot follow each session's workspace.
+MCP stdio carries no per-call session identity: one child receives every session's calls, so repository identity must travel with the process — `memtrace mcp` with no flags opens the `.memdb` anchored by its working directory (the project-editor pattern from `memtrace mcp --help`). dsh-mcp-client (0.2.2-rc.5) mounts one child per row with a static `cwd`, so per-session keying needs a host-side change; until then, restating the `mcp-memtrace` row with `cwd: <repo root>` gives that project its own child, its own store, and no split-brain refusal (memtrace still refuses to index a repo into a store other than the one that path resolves to).
 
 ## Compatibility
 
@@ -154,7 +154,7 @@ Every DSH session shares the **`dsh` Named Workspace** graph; add repositories a
 
 ## Permissions & data
 
-- Spawns `memtrace mcp` in the session working directory (reads the repo to index; writes `.memdb` next to the project).
+- Spawns `memtrace mcp` (`MEMTRACE_BIN` overrides the command); the per-project working directory comes from the session-workspace keying described above, or your restated row's `cwd` (reads the repo to index; writes `.memdb` next to the project).
 - Registers skills from this package only.
 - Does not send code to Memtrace cloud. Local graph.
 
