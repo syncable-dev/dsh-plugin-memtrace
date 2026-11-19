@@ -3,9 +3,20 @@
 # Two rows, both owned by this package:
 # - dsh-plugin-memtrace registers the Memtrace agent skills at apply time.
 # - mcp-memtrace is the official DSH MCP client pointed at `memtrace mcp`.
-#   MEMTRACE_BIN overrides the binary; otherwise we use the launcher on PATH
-#   (ships as dsh-plugin-memtrace-mcp) which prefers a local `memtrace` and
-#   falls back to `npx -y memtrace mcp`.
+#
+# Per-project model: `memtrace mcp` with no workspace flag anchors on its
+# working directory and opens the repository's own .memdb — the
+# project-editor pattern from `memtrace mcp --help`. MCP stdio carries no
+# per-call session identity, so the child must be keyed per session
+# workspace by the host; dsh-mcp-client (0.2.2-rc.5) mounts one child per
+# row with a static cwd, so per-session keying needs a host-side change.
+# Until then, restate this row in the profile's cordis.patch.yml with
+# `cwd: <repo root>` to give one project its own child and store; without
+# a cwd the child inherits the app profile directory, which has no
+# repository scope. The command is pinned (MEMTRACE_BIN, else `memtrace`
+# on PATH) so per-project children never multiply npx fetches. Values stay
+# literal except the scalar command expression: the 0.2.x patch composer
+# mangles evaluated !!js values that return arrays.
 - insert:
     - id: dsh-plugin-memtrace
       name: dsh-plugin-memtrace
@@ -14,9 +25,9 @@
       config:
         serverName: memtrace
         transport: stdio
-        command: !!js (process.env.MEMTRACE_BIN && process.env.MEMTRACE_BIN.trim()) || 'npx'
-        args: !!js (process.env.MEMTRACE_BIN && process.env.MEMTRACE_BIN.trim()) ? ['mcp'] : ['-y', 'memtrace', 'mcp']
-        cwd: !!js process.cwd()
+        command: !!js process.env.MEMTRACE_BIN || 'memtrace'
+        args:
+          - mcp
         failOnStartupError: false
         toolCallTimeoutMs: 180000
         reconnect:

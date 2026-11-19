@@ -44,4 +44,20 @@ body
       /skill name/,
     )
   })
+
+  it('parses CRLF frontmatter written by Windows checkouts', () => {
+    const raw = `---
+name: memtrace-daily
+description: "CRLF skill."
+---
+
+Body.
+`.replace(/\n/g, '\r\n')
+
+    const parsed = parseSkillMarkdown(raw)
+
+    assert.equal(parsed.name, 'memtrace-daily')
+    assert.equal(parsed.description, 'CRLF skill.')
+    assert.match(parsed.body, /^Body\./)
+  })
 })
