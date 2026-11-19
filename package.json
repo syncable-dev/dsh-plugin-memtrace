@@ -1,7 +1,8 @@
 {
   "name": "dsh-plugin-memtrace",
-  "version": "0.1.0",
+  "version": "0.2.2",
   "description": "Local-first code intelligence graph for DeepSeek Harness: structural search, blast radius, temporal memory, and 27 agent skills over Memtrace MCP.",
+  "icon": "./assets/icon.svg",
   "type": "module",
   "main": "index.js",
   "bin": {
@@ -44,10 +45,11 @@
     "url": "https://github.com/syncable-dev/dsh-plugin-memtrace/issues"
   },
   "engines": {
-    "node": ">=22.19.0"
+    "node": ">=22.19.0",
+    "dsh": ">=0.1.0-rc.6 <0.3.0-0"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh": ">=0.1.0-rc.1 <0.2.0-0"
+    "@deepseek-ai/dsh": ">=0.1.0-rc.6 <0.3.0-0"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh": {
@@ -55,6 +57,7 @@
     }
   },
   "dsh": {
+    "manifestVersion": 1,
     "displayName": "Memtrace",
     "description": "Code intelligence graph — find symbols, blast radius, evolution, and architecture before the agent greps.",
     "icon": "./assets/icon.svg",

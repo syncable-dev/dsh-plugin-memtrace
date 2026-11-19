@@ -33,7 +33,7 @@ function fakeContext() {
 }
 
 describe('createApply', () => {
-  it('registers each bundled skill with a directory resourceBase and unregisters on unload', () => {
+  it('registers each bundled skill, ensures the dsh workspace, and unregisters on unload', async () => {
     const root = mkdtempSync(join(tmpdir(), 'dsh-memtrace-apply-'))
     const skillDir = join(root, 'skills', 'memtrace-first')
     mkdirSync(skillDir, { recursive: true })
@@ -48,8 +48,14 @@ Body.
 `,
     )
 
+    const ensureCalls = []
     const ctx = fakeContext()
-    createApply(root)(ctx)
+    createApply(root, {
+      ensureWorkspace: async (...args) => {
+        ensureCalls.push(args)
+        return { existed: true }
+      },
+    })(ctx)
 
     assert.equal(ctx.registered.length, 1)
     assert.equal(ctx.registered[0].name, 'memtrace-first')
@@ -59,6 +65,9 @@ Body.
       path: root,
     })
     assert.match(ctx.registered[0].content, /Body/)
+
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.deepEqual(ensureCalls.map((args) => args[0]), ['dsh'])
 
     ctx.unload()
     assert.equal(ctx.registered.length, 0)

@@ -65,12 +65,7 @@ npx -y @deepseek-ai/dsh plugin --profile web add github:syncable-dev/dsh-plugin-
 dsh --profile web --dump-config | grep -A4 'id: dsh-plugin-memtrace'
 ```
 
-First launch may take a minute while `npx memtrace mcp` fetches the Memtrace binary. Pin a local install to skip that:
-
-```sh
-npm install -g memtrace
-export MEMTRACE_BIN=memtrace
-```
+First launch may take a minute while `npx -y memtrace mcp` fetches the Memtrace binary; the plugin also ensures the `dsh` Named Workspace exists (`memtrace workspace create dsh`). To skip the npx fetch, restate the `mcp-memtrace` row in the profile's `cordis.patch.yml` with `command: memtrace` — restate the whole row, DSH does not deep-merge.
 
 Then open the Web UI and index the workspace:
 
@@ -101,7 +96,7 @@ flowchart LR
 Two Cordis rows, both owned by this bundle:
 
 1. **`dsh-plugin-memtrace`** — reads `skills/*/SKILL.md` and registers each skill at apply time. Unload disposes them.
-2. **`mcp-memtrace`** — official MCP client, `serverName: memtrace`, stdio. `MEMTRACE_BIN` overrides the command; otherwise `npx -y memtrace mcp`.
+2. **`mcp-memtrace`** — official MCP client, `serverName: memtrace`, stdio, `npx -y memtrace mcp --workspace dsh` (every value literal on purpose: the 0.2.x patch composer mangles evaluated `!!js` values that return arrays). The child anchors on the **`dsh` Named Workspace**: with no `memtrace start` running, the MCP process itself takes the workspace-owner lease and starts the local MemDB sidecar, storing under `~/.memtrace/workspaces/data/<id>/`. To pin a binary, restate the row — for example with the shipped `dsh-plugin-memtrace-mcp` launcher, which prefers `MEMTRACE_BIN`, then a local `memtrace`, then npx.
 
 We do **not** patch the filesystem skill provider's config. That row is last-write-wins; runtime registration does not collide with other skill packs.
 
@@ -141,16 +136,19 @@ All 27 bundles live under [`skills/`](skills/).
 
 | Variable | Effect |
 | --- | --- |
-| `MEMTRACE_BIN` | Absolute path or command used instead of `npx -y memtrace mcp` |
+| `MEMTRACE_BIN` | Absolute path or command the shipped `dsh-plugin-memtrace-mcp` launcher uses instead of `npx -y memtrace mcp`; wire it by restating the `mcp-memtrace` row with that launcher |
 
 Override the MCP row in the profile's `cordis.patch.yml` if you already run a Streamable HTTP Memtrace endpoint — restate the whole `mcp-memtrace` config (DSH does not deep-merge).
+
+Every DSH session shares the **`dsh` Named Workspace** graph; add repositories as members with `memtrace workspace add dsh <repo>`. Memtrace refuses to index a repository whose own `.memdb` differs from the active store (split-brain guard). To serve such a repository's existing store instead, restate the `mcp-memtrace` row in the profile's `cordis.patch.yml` with `cwd: <repo>` and no `--workspace` flags. The MCP child is one global instance — its store cannot follow each session's workspace.
 
 ## Compatibility
 
 | Surface | Status |
 | --- | --- |
-| Harness | DeepSeek Harness `0.1.0-rc.6`+ |
-| Node | `^22.19.0 \|\| >=24.0.0` |
+| Harness | DeepSeek Harness `>=0.1.0-rc.6 <0.3.0` — verified against `0.2.2-rc.5` (current release) |
+| Compat check | `engines.dsh` decides on DSH `0.2.1-alpha.3`+; older DSH reads the `@deepseek-ai/dsh` peer range |
+| Node | `>=22.19.0` (DSH `0.2.x` itself requires Node `>=24.9`; the desktop app bundles its own runtime) |
 | Platforms | macOS, Linux, Windows (Memtrace native binary via npm optional deps) |
 | Network | None required after the Memtrace binary is present |
 

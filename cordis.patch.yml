@@ -1,11 +1,18 @@
 # Memtrace bundle layer for DeepSeek Harness.
 #
 # Two rows, both owned by this package:
-# - dsh-plugin-memtrace registers the Memtrace agent skills at apply time.
-# - mcp-memtrace is the official DSH MCP client pointed at `memtrace mcp`.
-#   MEMTRACE_BIN overrides the binary; otherwise we use the launcher on PATH
-#   (ships as dsh-plugin-memtrace-mcp) which prefers a local `memtrace` and
-#   falls back to `npx -y memtrace mcp`.
+# - dsh-plugin-memtrace registers the Memtrace agent skills at apply time and
+#   ensures the `dsh` Named Workspace exists (memtrace workspace create dsh).
+# - mcp-memtrace is the official DSH MCP client pointed at
+#   `memtrace mcp --workspace dsh`. The named workspace gives the child a
+#   resolvable scope: when no `memtrace start` owns it, the MCP process
+#   itself takes the workspace-owner lease and starts the local MemDB
+#   sidecar (verified against memtrace 1.2.21), with the store under
+#   ~/.memtrace/workspaces/data/<id>/. Every value stays literal on
+#   purpose: the 0.2.x patch composer mangles evaluated !!js values that
+#   return arrays. To serve one repository's own .memdb instead, restate
+#   this row in the profile's cordis.patch.yml with cwd: <repo> and no
+#   --workspace flag.
 - insert:
     - id: dsh-plugin-memtrace
       name: dsh-plugin-memtrace
@@ -14,9 +21,13 @@
       config:
         serverName: memtrace
         transport: stdio
-        command: !!js (process.env.MEMTRACE_BIN && process.env.MEMTRACE_BIN.trim()) || 'npx'
-        args: !!js (process.env.MEMTRACE_BIN && process.env.MEMTRACE_BIN.trim()) ? ['mcp'] : ['-y', 'memtrace', 'mcp']
-        cwd: !!js process.cwd()
+        command: npx
+        args:
+          - '-y'
+          - memtrace
+          - mcp
+          - '--workspace'
+          - dsh
         failOnStartupError: false
         toolCallTimeoutMs: 180000
         reconnect:

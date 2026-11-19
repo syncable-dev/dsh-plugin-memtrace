@@ -60,12 +60,7 @@ npx -y @deepseek-ai/dsh plugin --profile web add github:syncable-dev/dsh-plugin-
 dsh --profile web --dump-config | grep -A4 'id: dsh-plugin-memtrace'
 ```
 
-首次启动可能会花一分钟（`npx memtrace mcp` 拉取二进制）。想跳过：
-
-```sh
-npm install -g memtrace
-export MEMTRACE_BIN=memtrace
-```
+首次启动可能会花一分钟（`npx -y memtrace mcp` 拉取二进制）；插件同时会确保 `dsh` Named Workspace 存在（`memtrace workspace create dsh`）。想跳过 npx 拉取：在 profile 的 `cordis.patch.yml` 里整行重述 `mcp-memtrace`，改为 `command: memtrace`（DSH 不做深度合并）。
 
 然后在 Web UI 里：
 
@@ -81,14 +76,22 @@ export MEMTRACE_BIN=memtrace
 
 本包是纯 ESM，没有 `prepare`，git 安装不需要 `allowBuilds`。
 
+## 兼容性
+
+- DeepSeek Harness `>=0.1.0-rc.6 <0.3.0`（已对照当前版本 `0.2.2-rc.5` 验证）。
+- DSH `0.2.1-alpha.3+` 以 `engines.dsh` 判定兼容；更早的 DSH 读取 `@deepseek-ai/dsh` peer 范围。
+- Node `>=22.19.0`（DSH `0.2.x` 自身要求 Node `>=24.9`；桌面应用自带运行时）。
+
 ## 工作原理
 
 两条 Cordis 行，都由本包拥有：
 
 1. **`dsh-plugin-memtrace`** — 读取 `skills/*/SKILL.md`，在 `apply` 时注册；卸载即注销。
-2. **`mcp-memtrace`** — 官方 MCP 客户端，`serverName: memtrace`。`MEMTRACE_BIN` 覆盖命令，否则 `npx -y memtrace mcp`。
+2. **`mcp-memtrace`** — 官方 MCP 客户端，`serverName: memtrace`，`npx -y memtrace mcp --workspace dsh`（整行字面量：0.2.x 的 patch 组合器会破坏返回数组的 `!!js` 表达式）。子进程锚定在 **`dsh` Named Workspace** 上：没有 `memtrace start` 时，MCP 进程自己取得 workspace-owner 租约并启动本地 MemDB sidecar，数据落在 `~/.memtrace/workspaces/data/<id>/`。要固定本地二进制，请整行重述本 row —— 例如改用随包发布的 `dsh-plugin-memtrace-mcp` 启动器（优先 `MEMTRACE_BIN`，其次 PATH 上的 `memtrace`，最后 npx）。
 
 不会去改文件系统 skill provider 的 `config`（整行覆盖、后写赢）。运行时注册不会和其他 skill 包打架。
+
+MCP 子进程是全局唯一实例，store 无法跟随每个会话的 workspace。所有 DSH 会话共享 **`dsh` Named Workspace** 这一张图；用 `memtrace workspace add dsh <repo>` 把仓库加为成员。Memtrace 拒绝把已有自己 `.memdb` 的仓库索引进另一个 store（防脑裂）。要改用某个仓库自己的 store：在 profile 的 `cordis.patch.yml` 里整行重述 `mcp-memtrace`，设 `cwd: <repo>` 并去掉 `--workspace` 参数。
 
 ## 许可证
 
