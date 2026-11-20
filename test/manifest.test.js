@@ -12,27 +12,29 @@ describe('DSH bundle contract', () => {
     assert.equal(manifest.name, 'dsh-plugin-memtrace')
     assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml')
     assert.ok(manifest.keywords.includes('dsh-plugin'))
-    assert.ok(manifest.bin['dsh-plugin-memtrace-mcp'])
+    // No published launcher: the MCP client spawns `memtrace` directly.
+    assert.equal(manifest.bin, undefined)
+    assert.ok(!manifest.files.includes('bin/'))
   })
 
   it('inserts the skill plugin and the official MCP client under stable ids', () => {
     const patch = readFileSync(join(packageRoot, 'cordis.patch.yml'), 'utf8')
-    assert.match(patch, /id:\s*dsh-plugin-memtrace/)
-    assert.match(patch, /name:\s*dsh-plugin-memtrace/)
-    assert.match(patch, /id:\s*mcp-memtrace/)
-    assert.match(patch, /name:\s*'@deepseek-ai\/dsh-mcp-client'/)
-    assert.match(patch, /serverName:\s*memtrace/)
-    assert.match(patch, /transport:\s*stdio/)
-    // The 0.2.x patch composer mangles evaluated !!js values that return
-    // arrays (args became {"[object Object]": [...]}), so args stays literal
-    // while the command may evaluate a scalar. Comment lines are ignored.
-    assert.doesNotMatch(patch.replace(/^#.*$/gm, ''), /args:\s*!!js/)
-    // Per-project model: pinned command, no workspace flag — the child
-    // anchors on its working directory (the session workspace once the host
-    // keys MCP children per workspace; a restated row's cwd today).
-    assert.match(patch, /command:\s*!!js process\.env\.MEMTRACE_BIN \|\| 'memtrace'/)
-    assert.doesNotMatch(patch.replace(/^#.*$/gm, ''), /--workspace/)
-    assert.doesNotMatch(patch, /workspace create/)
+    // Comment lines are ignored. Only the scalar command may evaluate !!js,
+    // because the 0.2.x composer mangles evaluated values that return arrays;
+    // perWorkingDirectory routes each tool call to the Session's directory.
+    const body = patch.replace(/^#.*$/gm, '')
+    assert.match(body, /id:\s*dsh-plugin-memtrace/)
+    assert.match(body, /name:\s*dsh-plugin-memtrace/)
+    assert.match(body, /id:\s*mcp-memtrace/)
+    assert.match(body, /name:\s*'@deepseek-ai\/dsh-mcp-client'/)
+    assert.match(body, /serverName:\s*memtrace/)
+    assert.match(body, /transport:\s*stdio/)
+    assert.match(body, /perWorkingDirectory:\s*true/)
+    assert.doesNotMatch(body, /^\s*cwd:/m)
+    assert.doesNotMatch(body, /args:\s*!!js/)
+    assert.match(body, /command:\s*!!js process\.env\.MEMTRACE_BIN \|\| 'memtrace'/)
+    assert.doesNotMatch(body, /--workspace/)
+    assert.doesNotMatch(body, /workspace create/)
   })
 
   it('declares the DSH 0.2 compatibility contract: engines.dsh mirrors the peer range', () => {

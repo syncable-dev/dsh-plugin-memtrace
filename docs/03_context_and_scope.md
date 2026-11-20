@@ -11,7 +11,7 @@ C4Context
     System_Ext(memtrace, "Memtrace MCP", "Local code-intelligence graph server")
     Rel(dev, dsh, "asks the agent about the codebase")
     Rel(dsh, plugin, "loads bundle layer", "Cordis")
-    Rel(plugin, memtrace, "stdio MCP", "memtrace mcp / npx memtrace mcp")
+    Rel(plugin, memtrace, "stdio MCP", "memtrace mcp")
 ```
 
 Scope: this package. It does not index code itself; Memtrace does.
