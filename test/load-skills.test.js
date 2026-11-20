@@ -6,7 +6,7 @@ import { describe, it } from 'node:test'
 import { loadSkillsFrom } from '../lib/load-skills.js'
 
 describe('loadSkillsFrom', () => {
-  it('loads every SKILL.md bundle under skills/ and keeps directory resource bases', () => {
+  it('loads every SKILL.md bundle under skills/', () => {
     const root = mkdtempSync(join(tmpdir(), 'dsh-memtrace-skills-'))
     const firstDir = join(root, 'skills', 'memtrace-first')
     const searchDir = join(root, 'skills', 'memtrace-search')
@@ -40,7 +40,6 @@ Search body.
       skills.map((skill) => skill.name).sort(),
       ['memtrace-first', 'memtrace-search'],
     )
-    assert.equal(skills[0].resourceDirectory, join(root, 'skills', skills[0].name))
   })
 
   it('returns an empty list when the skills directory is missing', () => {

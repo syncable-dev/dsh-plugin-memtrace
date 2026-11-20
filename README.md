@@ -65,7 +65,7 @@ npx -y @deepseek-ai/dsh plugin --profile web add github:syncable-dev/dsh-plugin-
 dsh --profile web --dump-config | grep -A4 'id: dsh-plugin-memtrace'
 ```
 
-The row pins `command: memtrace` (override with `MEMTRACE_BIN`; for a zero-install fetch restate the row with `command: npx` and `args: ['-y', 'memtrace', 'mcp']`). With a client that supports `perWorkingDirectory`, each Session's calls run in that Session's working directory. On a stock dsh that key is ignored — restate the `mcp-memtrace` row in the profile's `cordis.patch.yml` with `cwd: <repo root>` (restate the whole row, DSH does not deep-merge).
+The row pins `command: memtrace` (override with `MEMTRACE_BIN`; for a zero-install fetch restate the row with `command: npx` and `args: ['-y', 'memtrace', 'mcp']`). With `perWorkingDirectory`, each tool call runs in the Session's working directory — see [How it works](#how-it-works) for the stock-dsh fallback.
 
 Then open the Web UI and index the workspace:
 
@@ -96,7 +96,7 @@ flowchart LR
 Two Cordis rows, both owned by this bundle:
 
 1. **`dsh-plugin-memtrace`** — reads `skills/*/SKILL.md` and registers each skill at apply time. Unload disposes them.
-2. **`mcp-memtrace`** — official MCP client, `serverName: memtrace`, stdio, `memtrace mcp` with the command pinned (`MEMTRACE_BIN`, else `memtrace` on PATH — no per-child npx fetch). No workspace flag: `memtrace mcp` anchors on its working directory and opens the repository's own `.memdb`. `perWorkingDirectory: true` starts each tool call in a child in the calling Session's working directory, so each project gets its own store (a git worktree resolves to the main repository's store). This needs a dsh-mcp-client with the option; a stock dsh ignores the key, and then a restated row's `cwd` sets the project.
+2. **`mcp-memtrace`** — official MCP client, `serverName: memtrace`, stdio, `memtrace mcp` with the command pinned (`MEMTRACE_BIN`, else `memtrace` on PATH — no per-child npx fetch). No workspace flag: `memtrace mcp` anchors on its working directory and opens the repository's own `.memdb`. A listing child runs in the row's `cwd`; with `perWorkingDirectory: true`, each tool call runs in a child started in the calling Session's working directory, so each project gets its own store, and a Session on a git worktree resolves to the main repository's store. This needs a dsh-mcp-client with the option; a stock dsh ignores the key, so restate the row with `cwd: <repo root>`.
 
 We do **not** patch the filesystem skill provider's config. That row is last-write-wins; runtime registration does not collide with other skill packs.
 
@@ -140,13 +140,14 @@ All 27 bundles live under [`skills/`](skills/).
 
 Override the MCP row in the profile's `cordis.patch.yml` if you already run a Streamable HTTP Memtrace endpoint — restate the whole `mcp-memtrace` config (DSH does not deep-merge).
 
-`memtrace mcp` opens the `.memdb` anchored by its working directory (the project-editor pattern from `memtrace mcp --help`). With `perWorkingDirectory: true`, each tool call runs in a child started in the calling Session's working directory, so a Session on a git worktree resolves to the main repository's store. This requires a dsh-mcp-client that implements the option. A stock dsh keeps the unknown key and ignores it, so every call reaches the one child in the profile directory, which has no workspace owner; there, restate the `mcp-memtrace` row in the profile's `cordis.patch.yml` with `cwd: <repo root>` and the whole config (DSH does not deep-merge).
+On a stock dsh, `perWorkingDirectory` is ignored: restate the `mcp-memtrace` row in the profile's `cordis.patch.yml` with `cwd: <repo root>` (restate the whole row, DSH does not deep-merge).
 
 ## Compatibility
 
 | Surface | Status |
 | --- | --- |
 | Harness | DeepSeek Harness `>=0.1.0-rc.6 <0.3.0` — verified against `0.2.2-rc.5` (current release) |
+| Per-Session routing | Needs a dsh-mcp-client with `perWorkingDirectory`; stock `0.2.2-rc.5` needs the row restated with `cwd` |
 | Compat check | `engines.dsh` decides on DSH `0.2.1-alpha.3`+; older DSH reads the `@deepseek-ai/dsh` peer range |
 | Node | `>=22.19.0` (DSH `0.2.x` itself requires Node `>=24.9`; the desktop app bundles its own runtime) |
 | Platforms | macOS, Linux, Windows (Memtrace native binary via npm optional deps) |
@@ -154,7 +155,7 @@ Override the MCP row in the profile's `cordis.patch.yml` if you already run a St
 
 ## Permissions & data
 
-- Spawns `memtrace mcp` (`MEMTRACE_BIN` overrides the command) in each Session's working directory via `perWorkingDirectory`, or in your restated row's `cwd` on a stock dsh (reads the repo to index; writes `.memdb` next to the project).
+- Spawns `memtrace mcp` (`MEMTRACE_BIN` overrides the command) as described under How it works (reads the repo to index; writes `.memdb` next to the project).
 - Registers skills from this package only.
 - Does not send code to Memtrace cloud. Local graph.
 
