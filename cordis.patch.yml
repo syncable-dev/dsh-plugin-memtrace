@@ -1,22 +1,11 @@
-# Memtrace bundle layer for DeepSeek Harness.
-#
-# Two rows, both owned by this package:
+# Memtrace bundle layer for DeepSeek Harness: two rows owned by this package.
 # - dsh-plugin-memtrace registers the Memtrace agent skills at apply time.
-# - mcp-memtrace is the official DSH MCP client pointed at `memtrace mcp`.
-#
-# Per-project model: `memtrace mcp` with no workspace flag anchors on its
-# working directory and opens the repository's own .memdb — the
-# project-editor pattern from `memtrace mcp --help`. MCP stdio carries no
-# per-call session identity, so the child must be keyed per session
-# workspace by the host; dsh-mcp-client (0.2.2-rc.5) mounts one child per
-# row with a static cwd, so per-session keying needs a host-side change.
-# Until then, restate this row in the profile's cordis.patch.yml with
-# `cwd: <repo root>` to give one project its own child and store; without
-# a cwd the child inherits the app profile directory, which has no
-# repository scope. The command is pinned (MEMTRACE_BIN, else `memtrace`
-# on PATH) so per-project children never multiply npx fetches. Values stay
-# literal except the scalar command expression: the 0.2.x patch composer
-# mangles evaluated !!js values that return arrays.
+# - mcp-memtrace is the official DSH MCP client running `memtrace mcp`.
+# `memtrace mcp` anchors on its working directory. `perWorkingDirectory`
+# routes each tool call to a child in the calling Session's directory; a
+# dsh-mcp-client without it ignores the key, so restate this row with
+# `cwd: <repo root>`. Values stay literal except the scalar command: the
+# 0.2.x composer mangles `!!js` values that return arrays.
 - insert:
     - id: dsh-plugin-memtrace
       name: dsh-plugin-memtrace
@@ -25,6 +14,7 @@
       config:
         serverName: memtrace
         transport: stdio
+        perWorkingDirectory: true
         command: !!js process.env.MEMTRACE_BIN || 'memtrace'
         args:
           - mcp
