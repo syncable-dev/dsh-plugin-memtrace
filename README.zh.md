@@ -60,7 +60,7 @@ npx -y @deepseek-ai/dsh plugin --profile web add github:syncable-dev/dsh-plugin-
 dsh --profile web --dump-config | grep -A4 'id: dsh-plugin-memtrace'
 ```
 
-row 固定 `command: memtrace`（用 `MEMTRACE_BIN` 覆盖；零安装可整行重述为 `command: npx`、`args: ['-y', 'memtrace', 'mcp']`）。一个 child 服务整个 profile —— 想让某个项目有自己的图谱，在 profile 的 `cordis.patch.yml` 里整行重述 `mcp-memtrace` 并设 `cwd: <仓库根目录>`（DSH 不做深度合并，需重述整行）。
+row 固定 `command: memtrace`（用 `MEMTRACE_BIN` 覆盖；零安装可整行重述为 `command: npx`、`args: ['-y', 'memtrace', 'mcp']`）。`perWorkingDirectory` 让每次工具调用都在 Session 的工作目录里运行 —— 原版 dsh 的 `cwd` 回退见「工作原理」。
 
 然后在 Web UI 里：
 
@@ -79,6 +79,7 @@ row 固定 `command: memtrace`（用 `MEMTRACE_BIN` 覆盖；零安装可整行�
 ## 兼容性
 
 - DeepSeek Harness `>=0.1.0-rc.6 <0.3.0`（已对照当前版本 `0.2.2-rc.5` 验证）。
+- 按 Session 路由需要带 `perWorkingDirectory` 的 dsh-mcp-client；原版 `0.2.2-rc.5` 需整行重述并设 `cwd`。
 - DSH `0.2.1-alpha.3+` 以 `engines.dsh` 判定兼容；更早的 DSH 读取 `@deepseek-ai/dsh` peer 范围。
 - Node `>=22.19.0`（DSH `0.2.x` 自身要求 Node `>=24.9`；桌面应用自带运行时）。
 
@@ -87,11 +88,19 @@ row 固定 `command: memtrace`（用 `MEMTRACE_BIN` 覆盖；零安装可整行�
 两条 Cordis 行，都由本包拥有：
 
 1. **`dsh-plugin-memtrace`** — 读取 `skills/*/SKILL.md`，在 `apply` 时注册；卸载即注销。
-2. **`mcp-memtrace`** — 官方 MCP 客户端，`serverName: memtrace`，`memtrace mcp`，命令固定（`MEMTRACE_BIN`，否则 PATH 上的 `memtrace` —— 不会按 child 重复拉取 npx）。不带 workspace 旗标：`memtrace mcp` 以其工作目录为锚，打开仓库自己的 `.memdb` —— 等 host 按会话 workspace 启动 child 后即为按项目；当前则靠整行重述本 row。
+2. **`mcp-memtrace`** — 官方 MCP 客户端，`serverName: memtrace`，`memtrace mcp`，命令固定（`MEMTRACE_BIN`，否则 PATH 上的 `memtrace` —— 不会按 child 重复拉取 npx）。不带 workspace 旗标：`memtrace mcp` 以其工作目录为锚，打开仓库自己的 `.memdb`。用于列工具的 child 运行在 row 的 `cwd`；`perWorkingDirectory: true` 让每次工具调用都在发起调用的 Session 工作目录里启动 child，每个项目因此有自己的 store，git worktree 上的 Session 也会解析到主仓库的 store。这需要实现了该选项的 dsh-mcp-client；原版 dsh 会忽略该键，此时整行重述本 row 并设 `cwd: <仓库根目录>`。
 
 不会去改文件系统 skill provider 的 `config`（整行覆盖、后写赢）。运行时注册不会和其他 skill 包打架。
 
-MCP stdio 不携带每次调用的会话身份：一个 child 收到所有会话的调用，仓库身份必须随进程传递 —— 不带旗标的 `memtrace mcp` 打开由其工作目录锚定的 `.memdb`（`memtrace mcp --help` 的 project-editor 模式）。dsh-mcp-client（0.2.2-rc.5）按 row 挂一个静态 `cwd` 的 child，按会话 keying 需要 host 侧改动；在此之前，整行重述 `mcp-memtrace` 并设 `cwd: <仓库根目录>` 即可让该项目拥有自己的 child、自己的 store，也不会触发防脑裂拒绝。
+原版 dsh 会忽略 `perWorkingDirectory`：在 profile 的 `cordis.patch.yml` 里整行重述 `mcp-memtrace` 并设 `cwd: <仓库根目录>`（DSH 不做深度合并）。
+
+## 配置与权限
+
+| 变量 | 作用 |
+| --- | --- |
+| `MEMTRACE_BIN` | MCP 行使用的命令（绝对路径或命令），覆盖 PATH 上的 `memtrace` |
+
+`MEMTRACE_BIN` 与 `perWorkingDirectory` 见「工作原理」；启动的 `memtrace mcp` 读取仓库建索引，`.memdb` 写在项目旁。本包只注册自己的 skill，不向 Memtrace 云端发送代码，图谱保存在本机。
 
 ## 许可证
 

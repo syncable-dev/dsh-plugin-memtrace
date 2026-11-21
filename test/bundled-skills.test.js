@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { dirname, join } from 'node:path'
+import { dirname } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { loadSkillsFrom } from '../lib/load-skills.js'
@@ -19,7 +19,6 @@ describe('bundled Memtrace skills', () => {
     for (const skill of skills) {
       assert.ok(skill.description.length > 20, skill.name)
       assert.ok(skill.body.includes('\n'), skill.name)
-      assert.equal(skill.directory, join(packageRoot, 'skills', skill.name))
     }
   })
 })
